@@ -1,0 +1,191 @@
+:root {
+  --bg: #1b1d21; --bg2: #22252a; --bg3: #2b2f36; --line: #3a3f47;
+  --fg: #d7dae0; --dim: #8b919b; --accent: #4da3ff; --accent2: #ffb84d; --warn: #ff6b4d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 12px/1.5 "Segoe UI", "Yu Gothic UI", sans-serif;
+  user-select: none;
+}
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 32px 1fr 100px 24px;
+  grid-template-columns: 210px 1fr 252px;
+  grid-template-areas:
+    "title title title"
+    "lib   stage side"
+    "strip strip strip"
+    "status status status";
+}
+
+/* ---------- 初回セットアップ / 致命的エラー ---------- */
+/* アプリ本体のグリッドを組めない画面。タイトルバー＋本文の縦積みにする。 */
+.plain { height: 100%; display: flex; flex-direction: column; }
+.setup { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  padding: 24px; overflow: auto; }
+.setup .card {
+  width: 560px; max-width: 100%; background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 26px 30px;
+}
+.setup h2 { font-size: 16px; margin-bottom: 8px; font-weight: 600; }
+.setup p { color: var(--dim); line-height: 1.7; margin-bottom: 10px; }
+.setup code { background: var(--bg3); border-radius: 3px; padding: 1px 4px; color: var(--fg); }
+.setup .kv { display: grid; grid-template-columns: 76px 1fr; gap: 4px 10px; margin: 14px 0; }
+.setup .kv dt { color: var(--dim); }
+.setup .kv dd { word-break: break-all; user-select: text; }
+.setup .br { margin: 18px 0 10px; }
+.setup .hint { margin: 0; word-break: break-all; }
+
+.fatal { flex: 1; min-height: 0; padding: 40px; overflow: auto; }
+.fatal h2 { color: var(--warn); margin-bottom: 12px; font-size: 16px; }
+.fatal pre { background: var(--bg2); padding: 14px; border-radius: 6px; white-space: pre-wrap; }
+
+/* ---------- タイトルバー（フレームレス）----------
+   ウィンドウ枠が無いので、ここがウィンドウの移動ハンドルと操作ボタンを兼ねる。
+   ボタン類は no-drag にしないとクリックがドラッグに吸われる。 */
+.titlebar {
+  grid-area: title; background: var(--bg2); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; padding: 0 0 0 12px; gap: 10px; height: 32px; flex: none;
+  -webkit-app-region: drag;
+}
+.titlebar .logo { font-weight: 700; letter-spacing: .3px; flex: none; }
+.titlebar .logo span { color: var(--accent); }
+.titlebar > span { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 空き領域＝ウィンドウ移動ハンドル */
+.titledrag { flex: 1; align-self: stretch; min-width: 20px; }
+.titlebar .root {
+  flex: none; max-width: 280px; overflow: hidden; margin: 0;
+  text-overflow: ellipsis; white-space: nowrap; -webkit-app-region: no-drag;
+}
+
+.win-ctrls { display: flex; flex: none; -webkit-app-region: no-drag; }
+.win-ctrls button {
+  width: 42px; height: 32px; border: none; background: none; color: var(--dim);
+  font: inherit; font-size: 12px; cursor: pointer;
+}
+.win-ctrls button:hover { background: var(--bg3); color: var(--fg); }
+.win-ctrls button.close:hover { background: var(--warn); color: #fff; }
+
+/* ---------- ライブラリ ---------- */
+.lib {
+  grid-area: lib; background: var(--bg2); border-right: 1px solid var(--line);
+  overflow-y: auto; padding: 8px;
+}
+.lib h3 { font-size: 11px; color: var(--dim); margin: 2px 4px 6px; font-weight: 400; }
+.lib > div {
+  padding: 3px 6px; border-radius: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lib .lv1 { font-weight: 600; }
+.lib .lv2 { padding-left: 16px; }
+.lib .lv3 { padding-left: 28px; }
+.lib .album { padding-left: 40px; cursor: pointer; }
+.lib .album:hover { background: var(--bg3); }
+.lib .album.on { background: #2c4a6e; color: #fff; }
+
+/* ---------- ステージ ---------- */
+.stage { grid-area: stage; position: relative; overflow: hidden; background: #101114; touch-action: none; }
+.stage.tool { cursor: crosshair; }
+.stage.panning { cursor: grabbing; }
+.world { position: absolute; transform-origin: 0 0; }
+.world .lay { position: absolute; left: 0; top: 0; }
+.world img.lay { user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.world .anno { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+
+/* ---------- サイドパネル ---------- */
+.side {
+  grid-area: side; background: var(--bg2); border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tabs button {
+  flex: 1; padding: 7px 0; background: none; border: none; color: var(--dim);
+  cursor: pointer; font: inherit; border-bottom: 2px solid transparent;
+}
+.tabs button.on { color: var(--fg); border-bottom-color: var(--accent); }
+.side .body { flex: 1; overflow-y: auto; padding: 10px; }
+.side h4 {
+  font-size: 11px; color: var(--dim); margin: 12px 0 5px; font-weight: 400;
+  border-bottom: 1px solid var(--line); padding-bottom: 3px;
+}
+.side h4:first-child { margin-top: 0; }
+
+.row { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.row label { flex: 1; color: var(--dim); }
+.chk { display: flex; align-items: center; gap: 6px; margin: 4px 0; cursor: pointer; }
+.hint { color: var(--dim); font-size: 11px; margin: 4px 0; }
+
+select, input[type=number], input[type=text] {
+  background: var(--bg3); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 4px; font: inherit; min-width: 0;
+}
+input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
+input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
+
+.btn {
+  background: var(--bg3); border: 1px solid var(--line); color: var(--fg);
+  border-radius: 4px; padding: 4px 8px; cursor: pointer; font: inherit;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.on { background: #2c4a6e; border-color: var(--accent); color: #fff; }
+.btn.primary { background: #2c4a6e; border-color: var(--accent); color: #fff; padding: 6px 14px; }
+.btn.primary:hover { background: #355880; }
+.btn.mini { padding: 2px 7px; font-size: 11px; margin-left: 8px; }
+.btn:disabled { opacity: .5; cursor: default; border-color: var(--line); }
+.br { display: flex; gap: 4px; flex-wrap: wrap; margin: 4px 0; }
+
+.layers .li { display: flex; align-items: center; gap: 6px; padding: 2px; border-radius: 4px; }
+.layers .li:hover { background: var(--bg3); }
+.layers .no { width: 20px; text-align: right; color: var(--dim); }
+.layers .pct { width: 32px; text-align: right; color: var(--dim); font-size: 10px; }
+.layers .li.base .no { color: var(--accent2); font-weight: 700; }
+
+.sw { width: 20px; height: 20px; border-radius: 4px; border: 2px solid transparent; cursor: pointer; }
+.sw.on { border-color: #fff; }
+
+/* ---------- フィルムストリップ ----------
+   横スクロールはサムネイル列だけに閉じ込める。strip 全体を overflow-x:auto に
+   すると、横スクロールバーが高さを食って縦スクロールバーまで出るうえ、
+   モードボタンが横スクロールで流れて消える。 */
+.strip {
+  grid-area: strip; background: var(--bg2); border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px; padding: 6px 10px; overflow: hidden;
+}
+.modes { display: grid; grid-template-columns: repeat(2, auto); gap: 3px; flex: none; }
+.modes .btn { width: 102px; text-align: left; padding: 2px 6px; }
+.thumbs {
+  display: flex; gap: 5px; flex: 1; min-width: 0;
+  overflow-x: auto; overflow-y: hidden; padding-bottom: 2px;
+}
+.thumb {
+  position: relative; flex: none; width: 100px; height: 68px; border-radius: 4px;
+  overflow: hidden; cursor: pointer; border: 2px solid transparent; background: #000;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb.cur { border-color: var(--accent); }
+.thumb .no {
+  position: absolute; left: 3px; top: 2px; font-size: 10px; color: #fff;
+  text-shadow: 0 0 3px #000;
+}
+.thumb .mk {
+  position: absolute; right: 3px; top: 2px; min-width: 15px; height: 15px; border-radius: 8px;
+  background: var(--accent2); color: #000; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+.thumb .kf {
+  position: absolute; left: 0; right: 0; bottom: 0; background: rgba(45, 74, 110, .9);
+  color: #fff; font-size: 10px; text-align: center; line-height: 14px;
+}
+
+.status {
+  grid-area: status; background: var(--bg2); border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 16px; padding: 0 12px;
+  color: var(--dim); font-size: 11px; white-space: nowrap; overflow: hidden;
+}
+.status b { color: var(--fg); font-weight: 600; }
+.status .warn { color: var(--accent2); }
+.status .r { margin-left: auto; overflow: hidden; text-overflow: ellipsis; }

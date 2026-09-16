@@ -1,0 +1,7 @@
+node_modules/
+# 手元でだけ使う作業用。公開しない。
+.local/
+out/
+dist/
+*.tsbuildinfo
+.DS_Store
